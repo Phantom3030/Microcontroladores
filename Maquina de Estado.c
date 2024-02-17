@@ -88,7 +88,7 @@ int Func_ESTADO_ABIERTO(void)
     inout.Ma = FALSE;
     inout.Mc = FALSE;
     inout.Led = FALSE;
-    CntTimeCa = 0;//reset de contador
+    CntTimeCa = 0;   //reset de contador
  
     for(;;)
     {
@@ -121,7 +121,18 @@ int Func_ESTADO_CERRADO(void)
 }
 int Func_ESTADO_ABRIENDO(void)
 {
- 
+    ESTADO_ANTERIOR = ESTADO_ACTUAL;
+    ESTADO_ACTUAL = ESTADO_ABRIENDO;
+    inout.Mc = FALSE;
+    inout.Ma = TRUE;
+
+    for(;;)
+    {
+        if(inout.Sa == TRUE)
+        {
+            return ESTADO_ABIERTO;
+        }
+    }
 }
 int Func_ESTADO_CERRANDO(void)
 {
@@ -140,13 +151,26 @@ int Func_ESTADO_CERRANDO(void)
 }
 int Func_ESTADO_INTERMEDIO(void)
 {
- 
+    ESTADO_ANTERIOR = ESTADO_ACTUAL;
+    ESTADO_ACTUAL = ESTADO_INIT;
+    inout.Ma = FALSE;
+    inout.Mc = FALSE;
+    for(;;)
+    {
+        if(inout.Ba == TRUE)
+        {
+            return ESTADO_ABRIENDO;
+        }
+        if(inout.Bc == TRUE)
+        {
+            return ESTADO_CERRANDO;
+        }
+    }
 }
 int Func_ESTADO_INIT(void)
 {
     ESTADO_ANTERIOR = ESTADO_ACTUAL;
     ESTADO_ACTUAL = ESTADO_INIT;
- 
     inout.Ma = FALSE;
     inout.Mc = FALSE;
  
