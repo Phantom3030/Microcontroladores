@@ -150,23 +150,23 @@ int Func_ESTADO_INIT(void)
     inout.Ma = FALSE;
     inout.Mc = FALSE;
  
-    if((inout.Sa == inTrue) && (intout.Sc == inTrue))
+    if((inout.Sa == inTrue) && (inout.Sc == inTrue))
     {
         return ESTADO_ERROR;
     }
  
-    if(inout.Sa == inTrue)
+    if((inout.Sa == inTrue) && (inout.Sc == inFalse))
     {
         return ESTADO_ABIERTO;
     }
  
-    if()
+    if((inout.Sa == inFalse) && (inout.Sc == inTrue))
     {
- 
+        return ESTADO_CERRADO;
     }
  
-    if()
+    if((inout.Sa == inFalse) && (inout.Sc == inFalse))
     {
- 
+        return ESTADO_INTERMEDIO;
     }
 }
