@@ -194,3 +194,43 @@ int Func_ESTADO_INIT(void)
         return ESTADO_INTERMEDIO;
     }
 }
+
+/*
+void intGeneral100ms(void)
+{
+    static int cont_int = 0;
+ 
+    cont_int++;
+ 
+    if(cont_int == 9)
+    {
+        CntTimeCa++;
+        cont_int = 0;
+    }
+ 
+    if(HAL_GPIO_Read(PUERTO, PIN_Bc))//leg
+    {
+        inout.Bc = TRUE;
+    }else{
+        inout.Bc = FALSE;
+    }
+ 
+    if(HAL_GPIO_Read(PUERTO, PIN_Ba))//leg
+    {
+ 
+    }
+ 
+    if(HAL_GPIO_Read(PUERTO, PIN_Sc))//leg
+    {
+ 
+    }
+ 
+    if(inout.Ma == TRUE)//leg
+    {
+        HAL_GPIO_Write(PUERTO, PIN_Ma,1);
+    }else
+    {
+        HAL_GPIO_Write(PUERTO, PIN_Ma,0);
+    }
+}
+*/
