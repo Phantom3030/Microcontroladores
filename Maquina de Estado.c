@@ -173,25 +173,27 @@ int Func_ESTADO_INIT(void)
     ESTADO_ACTUAL = ESTADO_INIT;
     inout.Ma = FALSE;
     inout.Mc = FALSE;
- 
-    if((inout.Sa == inTrue) && (inout.Sc == inTrue))
+    for(;;)
     {
-        return ESTADO_ERROR;
-    }
- 
-    if((inout.Sa == inTrue) && (inout.Sc == inFalse))
-    {
-        return ESTADO_ABIERTO;
-    }
- 
-    if((inout.Sa == inFalse) && (inout.Sc == inTrue))
-    {
-        return ESTADO_CERRADO;
-    }
- 
-    if((inout.Sa == inFalse) && (inout.Sc == inFalse))
-    {
-        return ESTADO_INTERMEDIO;
+        if((inout.Sa == inTrue) && (inout.Sc == inTrue))
+        {
+            return ESTADO_ERROR;
+        }
+    
+        if((inout.Sa == inTrue) && (inout.Sc == inFalse))
+        {
+            return ESTADO_ABIERTO;
+        }
+    
+        if((inout.Sa == inFalse) && (inout.Sc == inTrue))
+        {
+            return ESTADO_CERRADO;
+        }
+    
+        if((inout.Sa == inFalse) && (inout.Sc == inFalse))
+        {
+            return ESTADO_INTERMEDIO;
+        }
     }
 }
 
@@ -199,7 +201,6 @@ int Func_ESTADO_INIT(void)
 void intGeneral100ms(void)
 {
     static int cont_int = 0;
- 
     cont_int++;
  
     if(cont_int == 9)
@@ -211,26 +212,55 @@ void intGeneral100ms(void)
     if(HAL_GPIO_Read(PUERTO, PIN_Bc))//leg
     {
         inout.Bc = TRUE;
-    }else{
+    }
+    else
+    {
         inout.Bc = FALSE;
     }
  
     if(HAL_GPIO_Read(PUERTO, PIN_Ba))//leg
     {
- 
+        inout.Ba = TRUE;
+    }
+    else
+    {
+        inout.Ba = FALSE;
     }
  
     if(HAL_GPIO_Read(PUERTO, PIN_Sc))//leg
     {
- 
+        inout.Sc = TRUE;
+    }
+    else
+    {
+        inout.Sc = FALSE;
+    }
+
+    if(HAL_GPIO_Read(PUERTO, PIN_Sa))//leg
+    {
+        inout.Sa = TRUE;
+    }
+    else
+    {
+        inout.Sa = FALSE;
     }
  
     if(inout.Ma == TRUE)//leg
     {
         HAL_GPIO_Write(PUERTO, PIN_Ma,1);
-    }else
+    }
+    else
     {
         HAL_GPIO_Write(PUERTO, PIN_Ma,0);
+    }
+
+    if(inout.Mc == TRUE)//leg
+    {
+        HAL_GPIO_Write(PUERTO, PIN_Mc,1);
+    }
+    else
+    {
+        HAL_GPIO_Write(PUERTO, PIN_Mc,0);
     }
 }
 */
