@@ -1,0 +1,14 @@
+../Core/Src/main.c:111:5:main	8	static
+../Core/Src/main.c:186:6:SystemClock_Config	96	static
+../Core/Src/main.c:236:13:MX_TIM2_Init	40	static
+../Core/Src/main.c:281:13:MX_USART2_UART_Init	8	static
+../Core/Src/main.c:316:13:MX_GPIO_Init	48	static
+../Core/Src/main.c:362:5:Func_ESTADO_ERROR	4	static
+../Core/Src/main.c:369:5:Func_ESTADO_ABIERTO	4	static
+../Core/Src/main.c:384:5:Func_ESTADO_CERRADO	4	static
+../Core/Src/main.c:400:5:Func_ESTADO_ABRIENDO	4	static
+../Core/Src/main.c:415:5:Func_ESTADO_CERRANDO	4	static
+../Core/Src/main.c:430:5:Func_ESTADO_INTERMEDIO	4	static
+../Core/Src/main.c:448:5:Func_ESTADO_INIT	4	static
+../Core/Src/main.c:478:6:HAL_TIM_PeriodElapsedCallback	16	static
+../Core/Src/main.c:554:6:Error_Handler	4	static,ignoring_inline_asm
