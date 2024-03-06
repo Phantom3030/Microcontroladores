@@ -38,6 +38,7 @@
 #define FALSE     0
 #define ESTADO_MEDIDOR   0
 #define ESTADO_INICIAL   1
+#define ESTADO_INTERMEDIO   2
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -56,6 +57,7 @@ UART_HandleTypeDef huart2;
 /* USER CODE BEGIN PV */
 int Func_ESTADO_INICIAL(void);
 int Func_ESTADO_MEDIDOR(void);
+int Func_ESTADO_INTERMEDIO(void);
 uint32_t MED_ADC = 0;
 float VOLTAJE = 0.00;
 
@@ -142,6 +144,11 @@ int main(void)
 		{
 			ESTADO_SIGUIENTE = Func_ESTADO_INICIAL();
 		}
+	  if(ESTADO_SIGUIENTE == ESTADO_INTERMEDIO)
+		{
+			ESTADO_SIGUIENTE = Func_ESTADO_INTERMEDIO();
+		}
+
 	  if(ESTADO_SIGUIENTE == ESTADO_MEDIDOR)
 		{
 			ESTADO_SIGUIENTE = Func_ESTADO_MEDIDOR();
@@ -389,7 +396,7 @@ static void MX_GPIO_Init(void)
   /*Configure GPIO pin : B1_Pin */
   GPIO_InitStruct.Pin = B1_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_IT_FALLING;
-  GPIO_InitStruct.Pull = GPIO_PULLDOWN;
+  GPIO_InitStruct.Pull = GPIO_PULLUP;
   HAL_GPIO_Init(B1_GPIO_Port, &GPIO_InitStruct);
 
   /*Configure GPIO pin : LD2_Pin */
@@ -413,7 +420,24 @@ int Func_ESTADO_INICIAL(void)
     {
         if(inout.Sa == TRUE)
         {
+        	return ESTADO_INTERMEDIO;
+        }
+    }
+}
+
+int Func_ESTADO_INTERMEDIO(void)
+{
+    ESTADO_ANTERIOR = ESTADO_ACTUAL;
+    ESTADO_ACTUAL = ESTADO_INTERMEDIO;
+    for(;;)
+    {
+        if((inout.Sa == FALSE) && (ESTADO_ANTERIOR == ESTADO_INICIAL))
+        {
         	return ESTADO_MEDIDOR;
+        }
+        if((inout.Sa == FALSE) && (ESTADO_ANTERIOR == ESTADO_MEDIDOR))
+        {
+            return ESTADO_INICIAL;
         }
     }
 }
@@ -421,20 +445,20 @@ int Func_ESTADO_INICIAL(void)
 int Func_ESTADO_MEDIDOR(void)
 {
     ESTADO_ANTERIOR = ESTADO_ACTUAL;
-    ESTADO_ACTUAL = ESTADO_INICIAL;
+    ESTADO_ACTUAL = ESTADO_MEDIDOR;
     for(;;)
     {
-        if(inout.Sa == FALSE)
+    	VOLTAJE = (MED_ADC/4096.0)*3.3;
+    	if(inout.Sa == TRUE)
         {
-        	return ESTADO_INICIAL;
+        	return ESTADO_INTERMEDIO;
         }
-        VOLTAJE = (MED_ADC/4096.0)*3.3;
     }
 }
 
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim2)
 {
-	if(HAL_GPIO_ReadPin(PUERTO_PB_A, PIN_PB_A) == GPIO_PIN_SET)
+	if(HAL_GPIO_ReadPin(PUERTO_PB_A, PIN_PB_A) == FALSE)
 	{
 		inout.Sa = TRUE;
 	}
