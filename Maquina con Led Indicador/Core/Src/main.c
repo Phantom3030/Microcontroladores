@@ -44,19 +44,19 @@
 #define inFalse 1
 #define TIME_Ca 60
 #define PUERTO GPIOA
-#define PIN_Sa GPIO_PIN_0
-#define PIN_Sc GPIO_PIN_4
-#define PIN_Ma GPIO_PIN_6
-#define PIN_Mc GPIO_PIN_7
-#define PIN_Ba GPIO_PIN_9
-#define PIN_Bc GPIO_PIN_8
+#define PIN_Sa GPIO_PIN_0    //Sensor Puerta Abierta
+#define PIN_Sc GPIO_PIN_4    //Sensor Puerta Cerrada
+#define PIN_Ma GPIO_PIN_6    //Motor para Abrir
+#define PIN_Mc GPIO_PIN_7    //Motor para Cerrar
+#define PIN_Ba GPIO_PIN_9    //Boton Abrir
+#define PIN_Bc GPIO_PIN_8    //Boton Cerrar
 #define PIN_Led GPIO_PIN_5
-#define LED_ON 1
-#define LED_OFF 0
-#define INTER_ON 1
+#define LED_ON    1
+#define LED_OFF   0
+#define INTER_ON  1     //Intermitente
 #define INTER_OFF 0
 #define INTER_RAPIDO 25 //Definicion del tiempo rapido multiplo de 10ms
-#define INTER_LENTO  50 //Definicion del tiempo rapido multiplo de 10ms
+#define INTER_LENTO  50 //Definicion del tiempo lento multiplo de 10ms
 
 /* USER CODE END PD */
 
@@ -78,7 +78,7 @@ int Func_ESTADO_ABRIENDO(void);
 int Func_ESTADO_CERRANDO(void);
 int Func_ESTADO_INTERMEDIO(void);
 int Func_ESTADO_INIT(void);
-int Func_ESTADO_SETTINGLED(int, int);
+int Func_ESTADO_SETTINGLED(int, int);        //Funcion para configurar el Led
 
 volatile int ESTADO_ANTERIOR = ESTADO_INIT;
 volatile int ESTADO_ACTUAL = ESTADO_INIT;
@@ -96,8 +96,8 @@ volatile struct INOUT
 } inout;
 volatile struct LEDS
 {
-	unsigned int StatusLED: 1;
-	unsigned int InterLED;
+	unsigned int StatusLED: 1;      //Estado del Led
+	unsigned int InterLED;          //Intermitencia del Led
 }LedStatus;
 /* USER CODE END PV */
 
@@ -146,7 +146,7 @@ int main(void)
   MX_USART2_UART_Init();
   MX_TIM2_Init();
   /* USER CODE BEGIN 2 */
-  HAL_TIM_Base_Start_IT(&htim2);
+  HAL_TIM_Base_Start_IT(&htim2);           //Inicio del Tim2
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -178,7 +178,6 @@ int main(void)
       {
           ESTADO_SIGUIENTE = Func_ESTADO_INTERMEDIO();
       }
-
       if(ESTADO_SIGUIENTE == ESTADO_ERROR)
       {
           ESTADO_SIGUIENTE = Func_ESTADO_ERROR();
@@ -488,12 +487,12 @@ int Func_ESTADO_INIT(void)
 
 int Func_ESTADO_SETTINGLED(int St, int Inter)
 {
-	LedStatus.StatusLED = St;
-	LedStatus.InterLED = Inter;
+	LedStatus.StatusLED = St;       //Estado del Led
+	LedStatus.InterLED = Inter;     //Velocidad de Intermitencia
 	return 0;
 }
 
-void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim2)
+void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim2)  //Interrupciones
 {
 
 	    if(HAL_GPIO_ReadPin(PUERTO, PIN_Ba) == GPIO_PIN_SET)
@@ -534,23 +533,23 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim2)
 
 	    if(inout.Ma == TRUE)
 	    {
-	        HAL_GPIO_WritePin(PUERTO, PIN_Ma,1);
+	        HAL_GPIO_WritePin(PUERTO, PIN_Ma, TRUE);
 	    }
 	    else
 	    {
-	        HAL_GPIO_WritePin(PUERTO, PIN_Ma,0);
+	        HAL_GPIO_WritePin(PUERTO, PIN_Ma, FALSE);
 	    }
 
 	    if(inout.Mc == TRUE)
 	    {
-	        HAL_GPIO_WritePin(PUERTO, PIN_Mc,1);
+	        HAL_GPIO_WritePin(PUERTO, PIN_Mc, TRUE);
 	    }
 	    else
 	    {
-	        HAL_GPIO_WritePin(PUERTO, PIN_Mc,0);
+	        HAL_GPIO_WritePin(PUERTO, PIN_Mc, FALSE);
 	    }
 
-	    static unsigned cont_LED = 0;
+	    static unsigned cont_LED = 0;       //Contador Led
 	    cont_LED++;
 
 	    if(LedStatus.StatusLED == LED_ON)
@@ -559,11 +558,11 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim2)
 	    		{
 	    			if(HAL_GPIO_ReadPin(PUERTO, PIN_Led) == LED_ON)
 	    			{
-	    				HAL_GPIO_WritePin(PUERTO, PIN_Led,0);
+	    				HAL_GPIO_WritePin(PUERTO, PIN_Led, FALSE);
 	    			}
 	    			else
 	    			{
-	    				HAL_GPIO_WritePin(PUERTO, PIN_Led,1);
+	    				HAL_GPIO_WritePin(PUERTO, PIN_Led, TRUE);
 	    			}
 	    			cont_LED = 0;
 	    		}
@@ -571,7 +570,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim2)
 	    else
 	    {
 	    	cont_LED = 0;
-	    	HAL_GPIO_WritePin(PUERTO, PIN_Led,0);
+	    	HAL_GPIO_WritePin(PUERTO, PIN_Led, FALSE);
 	    }
 
   /* NOTE : This function should not be modified, when the callback is needed,
