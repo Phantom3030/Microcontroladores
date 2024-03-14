@@ -33,13 +33,20 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-#define PUERTO_PB_A   GPIOC
-#define PIN_PB_A 	  GPIO_PIN_13
+#define PUERTO_PB_A   GPIOA
+#define PIN_PB_A 	  GPIO_PIN_0
+//#define PUERTO_PB_A   GPIOC
+//#define PIN_PB_A 	  GPIO_PIN_13
+//#define PUERTO_PB1    GPIOA
+//#define PIN_PB1 	  GPIO_PIN_0
 #define TRUE	  1
 #define FALSE     0
 #define ESTADO_MEDIDOR   0
 #define ESTADO_INICIAL   1
 #define ESTADO_INTERMEDIO   2
+#define MEDIDOR_ON   1
+#define MEDIDOR_OFF  0
+
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -61,14 +68,18 @@ UART_HandleTypeDef huart2;
 int Func_ESTADO_INICIAL(void);
 int Func_ESTADO_MEDIDOR(void);
 int Func_ESTADO_INTERMEDIO(void);
+int Func_MEDIR_VOLTAJE(int);
+int Func_LCD(int);
 uint32_t MED_ADC = 0;
 float VOLTAJE = 0.00;
-char VOL_STR[50];
+char VOL_STR[5];
+unsigned int Estado_St;
+unsigned int Estado_Medidor;
+unsigned int cont_Vol = 0;
 
 volatile int ESTADO_ANTERIOR = ESTADO_INICIAL;
 volatile int ESTADO_ACTUAL = ESTADO_INICIAL;
 volatile int ESTADO_SIGUIENTE = ESTADO_INICIAL;
-volatile int c = 0;
 volatile struct INOUT
 {
     unsigned int Sa:1;
@@ -353,7 +364,7 @@ static void MX_TIM2_Init(void)
   htim2.Instance = TIM2;
   htim2.Init.Prescaler = 80-1;
   htim2.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim2.Init.Period = 100000;
+  htim2.Init.Period = 10000;
   htim2.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
   htim2.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
   if (HAL_TIM_Base_Init(&htim2) != HAL_OK)
@@ -454,6 +465,12 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Pull = GPIO_PULLUP;
   HAL_GPIO_Init(B1_GPIO_Port, &GPIO_InitStruct);
 
+  /*Configure GPIO pin : PushButton_Pin */
+  GPIO_InitStruct.Pin = PushButton_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+  GPIO_InitStruct.Pull = GPIO_PULLDOWN;
+  HAL_GPIO_Init(PushButton_GPIO_Port, &GPIO_InitStruct);
+
   /*Configure GPIO pin : LD2_Pin */
   GPIO_InitStruct.Pin = LD2_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
@@ -471,15 +488,14 @@ int Func_ESTADO_INICIAL(void)
 {
     ESTADO_ANTERIOR = ESTADO_ACTUAL;
     ESTADO_ACTUAL = ESTADO_INICIAL;
+    Func_LCD(0);
+    Estado_Medidor = MEDIDOR_OFF;
     for(;;)
     {
-    	lcd_enviar("DISPLAY ON", 0, 2);
     	if(inout.Sa == TRUE)
         {
         	return ESTADO_INTERMEDIO;
         }
-    	HAL_Delay(100);
-    	lcd_clear();
     }
 }
 
@@ -506,22 +522,51 @@ int Func_ESTADO_MEDIDOR(void)
     ESTADO_ACTUAL = ESTADO_MEDIDOR;
     for(;;)
     {
-    	VOLTAJE = (MED_ADC/4096.0)*3.3;
-    	sprintf(VOL_STR, "%g", VOLTAJE);
-    	lcd_enviar("Voltaje:", 0, 2);
-    	lcd_enviar(VOL_STR, 1, 2);
     	if(inout.Sa == TRUE)
         {
         	return ESTADO_INTERMEDIO;
         }
-    	HAL_Delay(300);
-    	lcd_clear();
+    	Func_MEDIR_VOLTAJE(MEDIDOR_ON);
+        Func_LCD(1);
     }
 }
 
+int Func_LCD(int Estado_LCD)
+{
+	lcd_clear();
+	if(Estado_LCD == 0)
+	{
+		lcd_enviar("DISPLAY ON", 0, 2);
+	}
+
+	else
+	{
+		sprintf(VOL_STR, "%.2f", VOLTAJE);
+		lcd_enviar("Voltaje:", 0, 2);
+		lcd_enviar(VOL_STR, 1, 2);
+	}
+	return 0;
+}
+
+
+int Func_MEDIR_VOLTAJE (int md)
+{
+	Estado_Medidor = md;
+	while(cont_Vol != 50)
+	{
+		VOLTAJE = (MED_ADC/4096.0)*3.3;
+		if(inout.Sa == TRUE)
+		{
+			break;
+		}
+	}
+	return 0;
+}
+
+
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim2)
 {
-	if(HAL_GPIO_ReadPin(PUERTO_PB_A, PIN_PB_A) == FALSE)
+	if(HAL_GPIO_ReadPin(PUERTO_PB_A, PIN_PB_A) == TRUE)
 	{
 		inout.Sa = TRUE;
 	}
@@ -529,6 +574,32 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim2)
 	{
 		inout.Sa = FALSE;
 	}
+
+/*	static unsigned cont_LCD = 0;       //Contador LCD
+	if (cont_LCD >= 2)
+	{
+		lcd_clear();
+		cont_LCD = 0;
+	}
+	else
+	{
+		cont_LCD++;
+	}*/
+
+    if (cont_Vol >= 50)
+	{
+    	cont_Vol = 0;
+	}
+    else if (Estado_Medidor == MEDIDOR_ON)
+    {
+        cont_Vol++;
+    }
+    else
+    {
+    	cont_Vol = 0;
+    }
+
+
 }
 /* USER CODE END 4 */
 
