@@ -23,6 +23,7 @@
 /* USER CODE BEGIN Includes */
 #include <stdio.h>
 #include <stdlib.h>
+#include <math.h>
 #include "i2c-lcd.h"
 /* USER CODE END Includes */
 
@@ -68,14 +69,16 @@ UART_HandleTypeDef huart2;
 int Func_ESTADO_INICIAL(void);
 int Func_ESTADO_MEDIDOR(void);
 int Func_ESTADO_INTERMEDIO(void);
-int Func_MEDIR_VOLTAJE(int);
 int Func_LCD(int);
 uint32_t MED_ADC = 0;
+float CONVERT_ADC = 0.0;
+float RMS = 0.0;
+float Media = 0.0;
 float VOLTAJE = 0.00;
 char VOL_STR[5];
 unsigned int Estado_St;
 unsigned int Estado_Medidor;
-unsigned int cont_Vol = 0;
+//unsigned int cont_Vol = 0;
 
 volatile int ESTADO_ANTERIOR = ESTADO_INICIAL;
 volatile int ESTADO_ACTUAL = ESTADO_INICIAL;
@@ -150,7 +153,6 @@ int main(void)
   MX_I2C1_Init();
   /* USER CODE BEGIN 2 */
   HAL_TIM_Base_Start_IT(&htim2);
-  HAL_ADC_Start_DMA(&hadc1, &MED_ADC, 1);
   lcd_init();
   /* USER CODE END 2 */
 
@@ -520,13 +522,13 @@ int Func_ESTADO_MEDIDOR(void)
 {
     ESTADO_ANTERIOR = ESTADO_ACTUAL;
     ESTADO_ACTUAL = ESTADO_MEDIDOR;
+    Estado_Medidor = MEDIDOR_ON;
     for(;;)
     {
     	if(inout.Sa == TRUE)
         {
         	return ESTADO_INTERMEDIO;
         }
-    	Func_MEDIR_VOLTAJE(MEDIDOR_ON);
         Func_LCD(1);
     }
 }
@@ -548,22 +550,6 @@ int Func_LCD(int Estado_LCD)
 	return 0;
 }
 
-
-int Func_MEDIR_VOLTAJE (int md)
-{
-	Estado_Medidor = md;
-	while(cont_Vol != 50)
-	{
-		VOLTAJE = (MED_ADC/4096.0)*3.3;
-		if(inout.Sa == TRUE)
-		{
-			break;
-		}
-	}
-	return 0;
-}
-
-
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim2)
 {
 	if(HAL_GPIO_ReadPin(PUERTO_PB_A, PIN_PB_A) == TRUE)
@@ -575,6 +561,38 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim2)
 		inout.Sa = FALSE;
 	}
 
+	static unsigned cont_VOL = 0;
+	if (Estado_Medidor == MEDIDOR_ON)
+	{
+		HAL_ADC_Start_IT(&hadc1);
+		if (HAL_ADC_PollForConversion(&hadc1, 10) == HAL_OK)
+		{
+			MED_ADC = HAL_ADC_GetValue(&hadc1);
+			//CONVERT_ADC = (MED_ADC/4096.0) * 3.3;
+			if (cont_VOL >= 20)
+			{
+				Media = Media/cont_VOL;
+				VOLTAJE = (Media/4096.0) * 3.3;
+				//VOLTAJE = sqrtf((RMS/cont_VOL) - (Media * Media));
+				cont_VOL = 0;
+				Media = 0;
+				//RMS = 0;
+			}
+			else
+			{
+				//RMS += CONVERT_ADC * CONVERT_ADC;
+				Media += MED_ADC;
+				cont_VOL++;
+				HAL_ADC_Stop_IT(&hadc1);
+			}
+		}
+	}
+	else
+	{
+		HAL_ADC_Stop_IT(&hadc1);
+	}
+
+
 /*	static unsigned cont_LCD = 0;       //Contador LCD
 	if (cont_LCD >= 2)
 	{
@@ -585,19 +603,6 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim2)
 	{
 		cont_LCD++;
 	}*/
-
-    if (cont_Vol >= 50)
-	{
-    	cont_Vol = 0;
-	}
-    else if (Estado_Medidor == MEDIDOR_ON)
-    {
-        cont_Vol++;
-    }
-    else
-    {
-    	cont_Vol = 0;
-    }
 
 
 }
