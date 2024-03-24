@@ -34,8 +34,8 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-#define PUERTO_PB_A   GPIOA
-#define PIN_PB_A 	  GPIO_PIN_0
+#define PUERTO_PB_A   GPIOA         //Puerto Boton Externo
+#define PIN_PB_A 	  GPIO_PIN_0    //Pin Boton Externo
 //#define PUERTO_PB_A   GPIOC
 //#define PIN_PB_A 	  GPIO_PIN_13
 //#define PUERTO_PB1    GPIOA
@@ -45,8 +45,10 @@
 #define ESTADO_MEDIDOR   0
 #define ESTADO_INICIAL   1
 #define ESTADO_INTERMEDIO   2
-#define MEDIDOR_ON   1
-#define MEDIDOR_OFF  0
+#define MEDIDOR_ON   1          //Empezar a medir voltaje
+#define MEDIDOR_OFF  0          //Dejar de medir voltaje
+#define CAL 1.685               //Valor de Calibracion
+#define MUESTRAS     20         //Muestras a realizar
 
 /* USER CODE END PD */
 
@@ -69,16 +71,8 @@ UART_HandleTypeDef huart2;
 int Func_ESTADO_INICIAL(void);
 int Func_ESTADO_MEDIDOR(void);
 int Func_ESTADO_INTERMEDIO(void);
-int Func_LCD(int);
-uint32_t MED_ADC = 0;
-float CONVERT_ADC = 0.0;
-float RMS = 0.0;
-float Media = 0.0;
-float VOLTAJE = 0.00;
-char VOL_STR[5];
-unsigned int Estado_St;
+char VOL_STR[5];                   //String del Voltaje
 unsigned int Estado_Medidor;
-//unsigned int cont_Vol = 0;
 
 volatile int ESTADO_ANTERIOR = ESTADO_INICIAL;
 volatile int ESTADO_ACTUAL = ESTADO_INICIAL;
@@ -160,20 +154,19 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-	  if(ESTADO_SIGUIENTE == ESTADO_INICIAL)
-		{
-			ESTADO_SIGUIENTE = Func_ESTADO_INICIAL();
-		}
-	  if(ESTADO_SIGUIENTE == ESTADO_INTERMEDIO)
-		{
-			ESTADO_SIGUIENTE = Func_ESTADO_INTERMEDIO();
-		}
+	if(ESTADO_SIGUIENTE == ESTADO_INICIAL)
+	{
+		ESTADO_SIGUIENTE = Func_ESTADO_INICIAL();
+	}
+	if(ESTADO_SIGUIENTE == ESTADO_INTERMEDIO)
+	{
+		ESTADO_SIGUIENTE = Func_ESTADO_INTERMEDIO();
+	}
 
-	  if(ESTADO_SIGUIENTE == ESTADO_MEDIDOR)
-		{
-			ESTADO_SIGUIENTE = Func_ESTADO_MEDIDOR();
-		}
-
+	if(ESTADO_SIGUIENTE == ESTADO_MEDIDOR)
+	{
+		ESTADO_SIGUIENTE = Func_ESTADO_MEDIDOR();
+	}
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
@@ -490,7 +483,6 @@ int Func_ESTADO_INICIAL(void)
 {
     ESTADO_ANTERIOR = ESTADO_ACTUAL;
     ESTADO_ACTUAL = ESTADO_INICIAL;
-    Func_LCD(0);
     Estado_Medidor = MEDIDOR_OFF;
     for(;;)
     {
@@ -529,25 +521,11 @@ int Func_ESTADO_MEDIDOR(void)
         {
         	return ESTADO_INTERMEDIO;
         }
-        Func_LCD(1);
-    }
-}
-
-int Func_LCD(int Estado_LCD)
-{
-	lcd_clear();
-	if(Estado_LCD == 0)
-	{
-		lcd_enviar("DISPLAY ON", 0, 2);
-	}
-
-	else
-	{
-		sprintf(VOL_STR, "%.2f", VOLTAJE);
-		lcd_enviar("Voltaje:", 0, 2);
+    	lcd_clear();
+		lcd_enviar("Voltaje:", 0, 2);     //Palabra Voltaje, Fila 0, Columna 2
 		lcd_enviar(VOL_STR, 1, 2);
-	}
-	return 0;
+		HAL_Delay(1000);
+    }
 }
 
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim2)
@@ -562,48 +540,36 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim2)
 	}
 
 	static unsigned cont_VOL = 0;
+	static float Media = 0.0;
+	static float VOLTAJE = 0.00;
+	static uint32_t MED_ADC = 0;      //Medir ADC
+
 	if (Estado_Medidor == MEDIDOR_ON)
 	{
 		HAL_ADC_Start_IT(&hadc1);
-		if (HAL_ADC_PollForConversion(&hadc1, 10) == HAL_OK)
+		MED_ADC = HAL_ADC_GetValue(&hadc1);
+		if (cont_VOL >= MUESTRAS)
 		{
-			MED_ADC = HAL_ADC_GetValue(&hadc1);
-			//CONVERT_ADC = (MED_ADC/4096.0) * 3.3;
-			if (cont_VOL >= 20)
-			{
-				Media = Media/cont_VOL;
-				VOLTAJE = (Media/4096.0) * 3.3;
-				//VOLTAJE = sqrtf((RMS/cont_VOL) - (Media * Media));
-				cont_VOL = 0;
-				Media = 0;
-				//RMS = 0;
-			}
-			else
-			{
-				//RMS += CONVERT_ADC * CONVERT_ADC;
-				Media += MED_ADC;
-				cont_VOL++;
-				HAL_ADC_Stop_IT(&hadc1);
-			}
+			Media = Media/cont_VOL;
+			Media = sqrtf(Media) * 0.0005;
+			VOLTAJE = Media * CAL;
+			sprintf(VOL_STR, "%.2f", VOLTAJE);      //Convertir de Float a String
+			cont_VOL = 0;
+			Media = 0;
 		}
+		else
+		{
+			MED_ADC = MED_ADC * MED_ADC;
+			Media += MED_ADC;
+			cont_VOL++;
+			MED_ADC = 0;
+		}
+		HAL_ADC_Stop_IT(&hadc1);
 	}
 	else
 	{
 		HAL_ADC_Stop_IT(&hadc1);
 	}
-
-
-/*	static unsigned cont_LCD = 0;       //Contador LCD
-	if (cont_LCD >= 2)
-	{
-		lcd_clear();
-		cont_LCD = 0;
-	}
-	else
-	{
-		cont_LCD++;
-	}*/
-
 
 }
 /* USER CODE END 4 */
