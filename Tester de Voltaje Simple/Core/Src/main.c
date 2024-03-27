@@ -23,6 +23,7 @@
 /* USER CODE BEGIN Includes */
 #include <stdio.h>
 #include <stdlib.h>
+#include <math.h>
 #include "i2c-lcd.h"
 /* USER CODE END Includes */
 
@@ -33,13 +34,22 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-#define PUERTO_PB_A   GPIOC
-#define PIN_PB_A 	  GPIO_PIN_13
+#define PUERTO_PB_A   GPIOA         //Puerto Boton Externo
+#define PIN_PB_A 	  GPIO_PIN_0    //Pin Boton Externo
+//#define PUERTO_PB_A   GPIOC
+//#define PIN_PB_A 	  GPIO_PIN_13
+//#define PUERTO_PB1    GPIOA
+//#define PIN_PB1 	  GPIO_PIN_0
 #define TRUE	  1
 #define FALSE     0
 #define ESTADO_MEDIDOR   0
 #define ESTADO_INICIAL   1
 #define ESTADO_INTERMEDIO   2
+#define MEDIDOR_ON   1          //Empezar a medir voltaje
+#define MEDIDOR_OFF  0          //Dejar de medir voltaje
+#define CAL 1.685               //Valor de Calibracion
+#define MUESTRAS     20         //Muestras a realizar
+
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -61,14 +71,12 @@ UART_HandleTypeDef huart2;
 int Func_ESTADO_INICIAL(void);
 int Func_ESTADO_MEDIDOR(void);
 int Func_ESTADO_INTERMEDIO(void);
-uint32_t MED_ADC = 0;
-float VOLTAJE = 0.00;
-char VOL_STR[50];
+char VOL_STR[5];                   //String del Voltaje
+unsigned int Estado_Medidor;
 
 volatile int ESTADO_ANTERIOR = ESTADO_INICIAL;
 volatile int ESTADO_ACTUAL = ESTADO_INICIAL;
 volatile int ESTADO_SIGUIENTE = ESTADO_INICIAL;
-volatile int c = 0;
 volatile struct INOUT
 {
     unsigned int Sa:1;
@@ -139,7 +147,6 @@ int main(void)
   MX_I2C1_Init();
   /* USER CODE BEGIN 2 */
   HAL_TIM_Base_Start_IT(&htim2);
-  HAL_ADC_Start_DMA(&hadc1, &MED_ADC, 1);
   lcd_init();
   /* USER CODE END 2 */
 
@@ -147,20 +154,19 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-	  if(ESTADO_SIGUIENTE == ESTADO_INICIAL)
-		{
-			ESTADO_SIGUIENTE = Func_ESTADO_INICIAL();
-		}
-	  if(ESTADO_SIGUIENTE == ESTADO_INTERMEDIO)
-		{
-			ESTADO_SIGUIENTE = Func_ESTADO_INTERMEDIO();
-		}
+	if(ESTADO_SIGUIENTE == ESTADO_INICIAL)
+	{
+		ESTADO_SIGUIENTE = Func_ESTADO_INICIAL();
+	}
+	if(ESTADO_SIGUIENTE == ESTADO_INTERMEDIO)
+	{
+		ESTADO_SIGUIENTE = Func_ESTADO_INTERMEDIO();
+	}
 
-	  if(ESTADO_SIGUIENTE == ESTADO_MEDIDOR)
-		{
-			ESTADO_SIGUIENTE = Func_ESTADO_MEDIDOR();
-		}
-
+	if(ESTADO_SIGUIENTE == ESTADO_MEDIDOR)
+	{
+		ESTADO_SIGUIENTE = Func_ESTADO_MEDIDOR();
+	}
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
@@ -353,7 +359,7 @@ static void MX_TIM2_Init(void)
   htim2.Instance = TIM2;
   htim2.Init.Prescaler = 80-1;
   htim2.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim2.Init.Period = 100000;
+  htim2.Init.Period = 10000;
   htim2.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
   htim2.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
   if (HAL_TIM_Base_Init(&htim2) != HAL_OK)
@@ -454,6 +460,12 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Pull = GPIO_PULLUP;
   HAL_GPIO_Init(B1_GPIO_Port, &GPIO_InitStruct);
 
+  /*Configure GPIO pin : PushButton_Pin */
+  GPIO_InitStruct.Pin = PushButton_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+  GPIO_InitStruct.Pull = GPIO_PULLDOWN;
+  HAL_GPIO_Init(PushButton_GPIO_Port, &GPIO_InitStruct);
+
   /*Configure GPIO pin : LD2_Pin */
   GPIO_InitStruct.Pin = LD2_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
@@ -471,15 +483,13 @@ int Func_ESTADO_INICIAL(void)
 {
     ESTADO_ANTERIOR = ESTADO_ACTUAL;
     ESTADO_ACTUAL = ESTADO_INICIAL;
+    Estado_Medidor = MEDIDOR_OFF;
     for(;;)
     {
-    	lcd_enviar("DISPLAY ON", 0, 2);
     	if(inout.Sa == TRUE)
         {
         	return ESTADO_INTERMEDIO;
         }
-    	HAL_Delay(100);
-    	lcd_clear();
     }
 }
 
@@ -504,24 +514,23 @@ int Func_ESTADO_MEDIDOR(void)
 {
     ESTADO_ANTERIOR = ESTADO_ACTUAL;
     ESTADO_ACTUAL = ESTADO_MEDIDOR;
+    Estado_Medidor = MEDIDOR_ON;
     for(;;)
     {
-    	VOLTAJE = (MED_ADC/4096.0)*3.3;
-    	sprintf(VOL_STR, "%g", VOLTAJE);
-    	lcd_enviar("Voltaje:", 0, 2);
-    	lcd_enviar(VOL_STR, 1, 2);
     	if(inout.Sa == TRUE)
         {
         	return ESTADO_INTERMEDIO;
         }
-    	HAL_Delay(300);
     	lcd_clear();
+		lcd_enviar("Voltaje:", 0, 2);     //Palabra Voltaje, Fila 0, Columna 2
+		lcd_enviar(VOL_STR, 1, 2);
+		HAL_Delay(1000);
     }
 }
 
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim2)
 {
-	if(HAL_GPIO_ReadPin(PUERTO_PB_A, PIN_PB_A) == FALSE)
+	if(HAL_GPIO_ReadPin(PUERTO_PB_A, PIN_PB_A) == TRUE)
 	{
 		inout.Sa = TRUE;
 	}
@@ -529,6 +538,39 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim2)
 	{
 		inout.Sa = FALSE;
 	}
+
+	static unsigned cont_VOL = 0;
+	static float Media = 0.0;
+	static float VOLTAJE = 0.00;
+	static uint32_t MED_ADC = 0;      //Medir ADC
+
+	if (Estado_Medidor == MEDIDOR_ON)
+	{
+		HAL_ADC_Start_IT(&hadc1);
+		MED_ADC = HAL_ADC_GetValue(&hadc1);
+		if (cont_VOL >= MUESTRAS)
+		{
+			Media = Media/cont_VOL;
+			Media = sqrtf(Media) * 0.0005;
+			VOLTAJE = Media * CAL;
+			sprintf(VOL_STR, "%.2f", VOLTAJE);      //Convertir de Float a String
+			cont_VOL = 0;
+			Media = 0;
+		}
+		else
+		{
+			MED_ADC = MED_ADC * MED_ADC;
+			Media += MED_ADC;
+			cont_VOL++;
+			MED_ADC = 0;
+		}
+		HAL_ADC_Stop_IT(&hadc1);
+	}
+	else
+	{
+		HAL_ADC_Stop_IT(&hadc1);
+	}
+
 }
 /* USER CODE END 4 */
 
