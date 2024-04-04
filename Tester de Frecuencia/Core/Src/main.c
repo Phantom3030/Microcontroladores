@@ -365,7 +365,7 @@ static void MX_TIM2_Init(void)
   htim2.Instance = TIM2;
   htim2.Init.Prescaler = 80-1;
   htim2.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim2.Init.Period = 10000;
+  htim2.Init.Period = 1000;
   htim2.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
   htim2.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
   if (HAL_TIM_Base_Init(&htim2) != HAL_OK)
@@ -579,7 +579,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim2)
 		}*/
 		//static uint32_t tiempo_actual = 0;
 
-		if (cont_Frec == 3)
+		if (cont_Frec == 80)
 		{
 			HAL_GPIO_TogglePin(PUERTO_SALIDA_F, PIN_SALIDA_F);
 			Frecuencia_Salida = HAL_GPIO_ReadPin(PUERTO_SALIDA_F, PIN_SALIDA_F);
