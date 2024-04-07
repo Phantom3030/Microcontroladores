@@ -60,8 +60,8 @@ all: main-build
 main-build: Maquina\ de\ Estado.elf secondary-outputs
 
 # Tool invocations
-Maquina\ de\ Estado.elf Maquina\ de\ Estado.map: $(OBJS) $(USER_OBJS) C:\Users\kevin\STM32CubeIDE\workspace_1.14.1\Maquina\ de\ Estado\STM32L476RGTX_FLASH.ld makefile objects.list $(OPTIONAL_TOOL_DEPS)
-	arm-none-eabi-gcc -o "Maquina de Estado.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m4 -T"C:\Users\kevin\STM32CubeIDE\workspace_1.14.1\Maquina de Estado\STM32L476RGTX_FLASH.ld" --specs=nosys.specs -Wl,-Map="Maquina de Estado.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
+Maquina\ de\ Estado.elf Maquina\ de\ Estado.map: $(OBJS) $(USER_OBJS) C:\Users\kevin\git\Microcontroladores\Maquina\ de\ Estado\STM32L476RGTX_FLASH.ld makefile objects.list $(OPTIONAL_TOOL_DEPS)
+	arm-none-eabi-gcc -o "Maquina de Estado.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m4 -T"C:\Users\kevin\git\Microcontroladores\Maquina de Estado\STM32L476RGTX_FLASH.ld" --specs=nosys.specs -Wl,-Map="Maquina de Estado.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
 	@echo 'Finished building target: $@'
 	@echo ' '
 
