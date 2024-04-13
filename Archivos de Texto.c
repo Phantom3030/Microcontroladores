@@ -2,20 +2,24 @@
 #include<conio.h>
 #include<stdlib.h>
 
-char Palabra[20];
-
-int main()
+int main() 
 {
-    printf("Escriba que quiere guardar en el txt.");
-    scanf("%s", Palabra);
-    FILE *arch=fopen("datos1.txt","wt");
-    if (arch==NULL)
+    FILE *file = fopen("datos.txt", "wt"); 
+    char *input = (char *)malloc(100 * sizeof(char));
+    if (input == NULL) 
+    {
         exit(1);
-    fputs("Primer linea\n",arch);
-    fputs("Segunda linea\n",arch);
-    fprintf(arch,"%s", Palabra); // Escribir la palabra en el archivo
-    fclose(arch);
-    printf("Se creo el archivo de texto con tres lineas de texto.");
-    getch();
+    }
+    printf("Ingrese los datos que desea guardar en el archivo: ");
+    fgets(input, 100, stdin);
+    if (file == NULL) 
+    {
+        printf("Error: no se pudo abrir el archivo.");
+        return 1;
+    }
+    fprintf(file, "%s", input);
+    fclose(file);
+    free(input);
+    printf("Se creo el archivo de texto.\n");
     return 0;
 }
