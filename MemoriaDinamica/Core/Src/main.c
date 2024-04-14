@@ -21,7 +21,9 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-
+#include <stdio.h>
+#include <stdlib.h>
+#include "retarget.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -43,7 +45,12 @@
 UART_HandleTypeDef huart2;
 
 /* USER CODE BEGIN PV */
-uint8_t tx_buffer[27]="Hola Mundo\n\r";
+uint8_t tx_buffer[27]="\nHola Mundo\n\r";
+uint8_t rx_indx;
+uint8_t rx_data[1];
+uint8_t rx_buffer [100];
+uint8_t transfer_cplt;
+char Dato[6];
 
 /* USER CODE END PV */
 
@@ -91,15 +98,17 @@ int main(void)
   MX_GPIO_Init();
   MX_USART2_UART_Init();
   /* USER CODE BEGIN 2 */
-
+  //HAL_UART_Receive_IT(&huart2, rx_data, 1);
+  RetargetInit(&huart2);
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-	  HAL_UART_Transmit(&huart2, tx_buffer, 27, 10);
-	  HAL_Delay(1000);
+	    printf("\r\nYour name: ");
+	    scanf("%s", Dato);
+	    printf("\r\nHello, %s!\r\n", Dato);
 	  /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
@@ -229,7 +238,18 @@ static void MX_GPIO_Init(void)
 }
 
 /* USER CODE BEGIN 4 */
+/*void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
+{
+  UNUSED(huart);
+  HAL_UART_Transmit(&huart2, rx_data, 1, 10);
 
+  if(rx_data[0] == 's')
+  {
+	  HAL_UART_Transmit(&huart2, tx_buffer, 27, 10);
+	  free(rx_data);
+	  HAL_Delay(10);
+  }
+}*/
 /* USER CODE END 4 */
 
 /**
