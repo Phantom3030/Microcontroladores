@@ -45,12 +45,12 @@
 UART_HandleTypeDef huart2;
 
 /* USER CODE BEGIN PV */
-uint8_t tx_buffer[27]="\nHola Mundo\n\r";
+/*uint8_t tx_buffer[27]="\nHola Mundo\n\r";
 uint8_t rx_indx;
 uint8_t rx_data[1];
 uint8_t rx_buffer [100];
-uint8_t transfer_cplt;
-char Dato[6];
+uint8_t transfer_cplt;*/
+
 
 /* USER CODE END PV */
 
@@ -100,6 +100,7 @@ int main(void)
   /* USER CODE BEGIN 2 */
   //HAL_UART_Receive_IT(&huart2, rx_data, 1);
   RetargetInit(&huart2);
+  char *input = (char *)malloc(100 * sizeof(char));
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -107,8 +108,9 @@ int main(void)
   while (1)
   {
 	    printf("\r\nYour name: ");
-	    scanf("%s", Dato);
-	    printf("\r\nHello, %s!\r\n", Dato);
+	    fgets(input, 100, stdin);
+	    printf("\r\nHello, %s!\r\n", input);
+	    free(input);
 	  /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
